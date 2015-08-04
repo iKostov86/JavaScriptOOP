@@ -8,8 +8,24 @@
 
 */
 
-function sum() {
-	
+function solve() {
+    return function sum(numbers) {
+        var i,
+            sum,
+            len;
+        if ((len = numbers.length) === 0) {
+            return null;
+        }
+        sum = +numbers[0];
+        for (i = 1; i < len; i += 1) {
+            if(parseFloat(numbers[i])) {
+                sum += +numbers[i];
+            } else {
+                throw Error;
+            }
+        }
+        return sum;
+    };
 }
 
 module.exports = sum;

@@ -34,4 +34,11 @@ describe('Tests for "Task 2"', function () {
 	it('expect solve(258, 262) to be equal to [](empty array)', function () {
 		expect(solve(258, 262)).to.be.empty;
 	});
+
+	it('expect solve("R", 5) to throw error', function () {
+	    function test() {
+	        solve("R", 5);
+	    }
+	    expect(test).to.throw();
+	});
 });
