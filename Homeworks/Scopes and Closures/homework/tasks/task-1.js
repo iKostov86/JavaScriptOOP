@@ -24,11 +24,57 @@ function solve() {
 	var library = (function () {
 		var books = [];
 		var categories = [];
-		function listBooks() {
+		
+		function listBooks(sortedBy) {
+			sortedBy = sortedBy || '';
+			if (sortedBy) {
+				if (sortedBy.category) {
+					if (!books.some(function(book) {
+						return book.category === sortedBy.category ? true : false;
+					})) {
+						return [];
+					} else {
+						return books.filter(function(book) {
+							return book.category === sortedBy.category ? true : false;
+						});
+					}
+				} else if (sortedBy.author) {
+					if (!books.some(function(book) {
+						return book.author === sortedBy.author ? true : false;
+					})) {
+						return [];
+					} else {
+						return books.filter(function(book) {
+							return book.author === sortedBy.author ? true : false;
+						});
+					}
+				}
+			}
 			return books;
 		}
 
 		function addBook(book) {
+			
+			if (!book.title || !book.author || !book.isbn || !book.category || 
+				book.title.length < 2 || book.title.length > 100 ||
+				book.category.length < 2 || book.category.length > 100 ||
+				(book.isbn.length !== 10 && book.isbn.length !== 13)) {
+				throw Error;
+			}
+			
+			var isRepeated = books.some(function(item) {
+				if (item.title === book.title || item.isbn === book.isbn) {
+					return true;
+				} return false;
+			});
+			if (isRepeated) {
+				throw Error;
+			}
+			
+			if (!categories.some(function(item) { return (item === book.category ? true : false); })) {
+				categories.push(book.category);
+			}
+			
 			book.ID = books.length + 1;
 			books.push(book);
 			return book;
@@ -47,7 +93,8 @@ function solve() {
 				list: listCategories
 			}
 		};
-	} ());
+	}());
 	return library;
 }
+
 module.exports = solve;
