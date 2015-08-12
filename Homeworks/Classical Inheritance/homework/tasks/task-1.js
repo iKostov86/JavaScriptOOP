@@ -17,8 +17,73 @@
 */
 function solve() {
 	var Person = (function () {
-		function Person() {
+		var newValue;
+		
+		function Person(firstname, lastname, age) {
+			this.firstname = firstname;
+			this.lastname = lastname;
+			this.age = age;
 		}
+		
+		function validateNames(name) {
+			if (typeof (name) !== 'string' ||
+				3 > name.length || name.length > 20 ||
+				(name.split('').some(function (char) {
+				return 'A' > char || (char > 'Z' && 'a' > char) || char > 'z';
+				}))) {
+				return false;
+			} return true;
+		}
+		
+		Person.prototype.introduce = function () {
+			return ('Hello! My name is ' + this.fullname + ' and I am ' + this.age + '-years-old');
+		};
+		
+		Object.defineProperties(Person.prototype, {
+			'firstname': {
+				get: function () {
+					return this._firstname;
+				},
+				set: function (value) {
+					if (!validateNames(value)) {
+						throw new Error('Wrong first name!');
+					}
+					this._firstname = value;
+				}
+			},
+			'lastname': {
+				get: function () {
+					return this._lastname;
+				}, set: function (value) {
+					if (!validateNames(value)) {
+						throw new Error('Wrong last name!');
+					}
+					this._lastname = value;
+				}
+			},
+			'age': {
+				get: function () {
+					return this._age;
+				},
+				set: function (value) {
+					newValue = +value;
+					if (!newValue || 0 > newValue || newValue > 150) {
+						throw new Error('Wrong age!');
+					}
+					this._age = value;
+				}
+			},
+			'fullname': {
+				get: function () {
+					return this.firstname + ' ' + this.lastname;
+				},
+				set: function (value) {
+					newValue = value.split(' ');
+					this.firstname = newValue[0];
+					this.lastname = newValue[1];
+				}
+			}
+		});
 		
 		return Person;
 	} ());
