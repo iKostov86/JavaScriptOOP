@@ -64,7 +64,8 @@ Outputs:
 function solve() {
 	var domElement = (function () {
 		var domElement = {
-			init: function(type) {
+			init: function (tag) {
+				this.tag = tag;
 			},
 			appendChild: function(child) {
 			},
@@ -72,12 +73,33 @@ function solve() {
 			},
 			removeAttribute: function(attribute) {
 			},
-      get innerHTML(){
-        
-      }
+			get innerHTML() {
+				return;
+			}
 		};
+		
+		Object.defineProperties(domElement, {
+			'tag': {
+				get: function () {
+					return this._tag;
+				},
+				set: function (value) {
+					if (!validate(value)) {
+						throw Error;
+					}
+					
+					this._tag = value;
+				}
+			}
+		});
+		
+		function validate(value) {
+			return !value || /[^0-9A-Za-z]+$/g.test(value);
+		}
+		
 		return domElement;
 	} ());
+	
 	return domElement;
 }
 
