@@ -62,50 +62,16 @@ Outputs:
 
 
 function solve() {
-	var bool,
-		index,
-		domElement = (function () {
-		
-		var domElement = {
-			init: function (tag) {
-				this.tag = tag;
-				return this;
-			},
-			appendChild: function (child) {
-				if (Object.getPrototypeOf(child) === domElement.prototype || typeof(child) === 'string') {
-					if (!this.children) {
-						this.children = [];
-					}
-					this.children.push(child);
-				}
-				return this;
-			},
-			addAttribute: function (name, value) {
-				if (!validate(name, /^[0-9A-Za-z-]+$/g)) {
-					throw Error;
-				}
-				if (!this._attributes) {
-					this._attributes = [];
-				}
-				this._attributes.push({name: name, value: value});
-				return this;
-			},
-			removeAttribute: function (attribute) {
-				bool = this._attributes.some(function (item, i) {
-					if (item['name'] === attribute) {
-						index = i;
-						return true;
-					} return false;
-				});
-				if (!bool) {
-					throw Error;
-				}
-				this._attributes.splice(index, 1);
-				return this;
-			}
-		};
-		
+	var domElement = (function () {
+		var domElement = Object.create(Object);
+
 		Object.defineProperties(domElement, {
+			'init': {
+				value: function (tag) {
+					this.tag = tag;
+					return this;
+				}
+			},
 			'tag': {
 				get: function () {
 					return this._tag;
@@ -113,73 +79,122 @@ function solve() {
 				set: function (value) {
 					if (!validate(value, /^[0-9A-Za-z-]+$/g)) {
 						throw Error;
-					}		
+					}
 					this._tag = value;
 				}
 			},
-			'attributes': {
-				get: function () {
-					return this._attributes;
-				},
-				set: function (value) {
-					this.attributes = value;
+			'appendChild': {
+				value: function (child) {
+					var obj;
+					if (typeof (child) === 'string') {
+						obj = {
+							tag: child,
+							parent: this
+						};
+						this.children.push(obj);
+					} else if (Object.getPrototypeOf(child) === domElement) {
+						child.parent = this;
+						this.children.push(child);
+					}
+					return this;
+				}
+			},
+			'addAttribute': {
+				value: function (name, value) {
+					var index;
+					if (!validate(name, /^[0-9A-Za-z-]+$/g)) {
+						throw Error;
+					}
+					index = findIndex(this.attributes, name);
+					if (index !== undefined) {
+						this.attributes[index].value = value;
+					} else {
+						this.attributes.push({ name: name, value: value });
+					}
+					return this;
+				}
+			},
+			'removeAttribute': {
+				value: function (attribute) {
+					var index = findIndex(this.attributes, attribute);
+					if (index === undefined) {
+						throw Error;
+					}
+					this.attributes.splice(index, 1);
+					return this;
 				}
 			},
 			'children': {
 				get: function () {
+					if (!this._children) {
+						this._children = [];
+					}
 					return this._children;
 				},
 				set: function (value) {
 					this._children = value;
 				}
 			},
-			'parent': {
+			'attributes': {
 				get: function () {
-					return this._parent;
+					if (!this._attributes) {
+						this._attributes = [];
+					}
+					return this._attributes;
 				},
 				set: function (value) {
-					this._parent = value;
+					this._attributes = value;
 				}
 			},
 			'content': {
-				get: function () {
-					return this._content;
-				}
+				value: '',
+				writable: true
+			},
+			'parent': {
+				writable: true
 			},
 			'innerHTML': {
 				get: function () {
-					var attr,
-						child,
-						content;
+					var inside,
+						attr;
+
+					inside = this.children.reduce(function (result, item) {
+						if (Object.getPrototypeOf(item) === domElement) {
+							return result + item.innerHTML;
+						} else {
+							return result + item.tag;
+						}
+					}, '');
 					
-					if (this.attributes === undefined || this.attributes === []) {
-						attr = '';
-					} else {
-						attr = this.attributes.map(function (item) {
-							return item.name + '="' + item.value + '" ';
-						});
+					attr = this.attributes.sort(function (a, b) {
+							return a.name > b.name;
+						})
+						.reduce(function (result, item) {
+							return result + ' ' + item.name + '="' + item.value + '"';
+					}, '');
+						
+					if (!inside && this.content) {
+						inside = this.content;
 					}
 					
-					if (this.children === undefined || this.children === []) {
-						child = '';
-					} else {
-						child = this.children.map(function (item) {
-							return item.innerHTML;
-						});
-					}
-					
-					if (this.content === undefined) {
-						content = '';
-					}
-					
-					return '<' + this.tag + attr + '>' +
-							content + child + '</' + this.tag + '>';
+					return '<' + this.tag + attr + '>' + inside + '</' + this.tag + '>';
 				}
 			}
 		});
 		
-		function validate(value, regex) {
+		function validate (value, regex) {
 			return (typeof(value) === 'string' && value && regex.test(value));
+		}
+		
+		function findIndex(attributes, attribute) {
+			var index;
+			attributes.some(function (item, i) {
+				if (item.name === attribute) {
+					index = i;
+					return true;
+				} return false;
+			});
+			return index;
 		}
 		
 		return domElement;
@@ -188,5 +203,4 @@ function solve() {
 	return domElement;
 }
 
-//solve();
 module.exports = solve;
