@@ -62,19 +62,46 @@ Outputs:
 
 
 function solve() {
-	var domElement = (function () {
+	var bool,
+		index,
+		domElement = (function () {
+		
 		var domElement = {
 			init: function (tag) {
 				this.tag = tag;
+				return this;
 			},
-			appendChild: function(child) {
+			appendChild: function (child) {
+				if (Object.getPrototypeOf(child) === domElement.prototype || typeof(child) === 'string') {
+					if (!this.children) {
+						this.children = [];
+					}
+					this.children.push(child);
+				}
+				return this;
 			},
-			addAttribute: function(name, value) {
+			addAttribute: function (name, value) {
+				if (!validate(name, /^[0-9A-Za-z-]+$/g)) {
+					throw Error;
+				}
+				if (!this._attributes) {
+					this._attributes = [];
+				}
+				this._attributes.push({name: name, value: value});
+				return this;
 			},
-			removeAttribute: function(attribute) {
-			},
-			get innerHTML() {
-				return;
+			removeAttribute: function (attribute) {
+				bool = this._attributes.some(function (item, i) {
+					if (item['name'] === attribute) {
+						index = i;
+						return true;
+					} return false;
+				});
+				if (!bool) {
+					throw Error;
+				}
+				this._attributes.splice(index, 1);
+				return this;
 			}
 		};
 		
@@ -84,17 +111,75 @@ function solve() {
 					return this._tag;
 				},
 				set: function (value) {
-					if (!validate(value)) {
+					if (!validate(value, /^[0-9A-Za-z-]+$/g)) {
 						throw Error;
+					}		
+					this._tag = value;
+				}
+			},
+			'attributes': {
+				get: function () {
+					return this._attributes;
+				},
+				set: function (value) {
+					this.attributes = value;
+				}
+			},
+			'children': {
+				get: function () {
+					return this._children;
+				},
+				set: function (value) {
+					this._children = value;
+				}
+			},
+			'parent': {
+				get: function () {
+					return this._parent;
+				},
+				set: function (value) {
+					this._parent = value;
+				}
+			},
+			'content': {
+				get: function () {
+					return this._content;
+				}
+			},
+			'innerHTML': {
+				get: function () {
+					var attr,
+						child,
+						content;
+					
+					if (this.attributes === undefined || this.attributes === []) {
+						attr = '';
+					} else {
+						attr = this.attributes.map(function (item) {
+							return item.name + '="' + item.value + '" ';
+						});
 					}
 					
-					this._tag = value;
+					if (this.children === undefined || this.children === []) {
+						child = '';
+					} else {
+						child = this.children.map(function (item) {
+							return item.innerHTML;
+						});
+					}
+					
+					if (this.content === undefined) {
+						content = '';
+					}
+					
+					return '<' + this.tag + attr + '>' +
+							content + child + '</' + this.tag + '>';
 				}
 			}
 		});
 		
-		function validate(value) {
-			return !value || /[^0-9A-Za-z]+$/g.test(value);
+		function validate(value, regex) {
+			return (typeof(value) === 'string' && value && regex.test(value));
 		}
 		
 		return domElement;
@@ -103,4 +188,5 @@ function solve() {
 	return domElement;
 }
 
+//solve();
 module.exports = solve;
