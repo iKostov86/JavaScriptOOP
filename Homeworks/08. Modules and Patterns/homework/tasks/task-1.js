@@ -46,101 +46,116 @@
 
 function solve() {
     var Course = (function () {
+        var _title,
+            _presentations,
+            _students;
+            
         var Course = {
             init: function (title, presentations) {
                 this.title = title;
                 this.presentations = presentations;
-                this.students = [];
+                _students = [];
                 return this;
-            },
-            addStudent: function (name) {
-                var names;
-                
-                if (validateString(name) && (names = name.split(' ')).length === 2 && 
-                    validateName(names[0]) && validateName(names[1])) {
-                    this.students.push({
-                        firstname: names[0],
-                        lastname: names[1],
-                        id: this.students.length + 1
-                    });
-                    
-                    return this.students.length;
-                } throw Error;
-            },
-            getAllStudents: function () {
-                return this.students.slice();
-            },
-            submitHomework: function (studentID, homeworkID) {
-                if (!validateID(studentID) || !validateID(homeworkID) ||
-                    studentID > this.students.length || homeworkID > this.presentations.length) {
-                    throw Error;
-                }
-                this.students.forEach(function (item) {
-                    if (item.id === studentID) {
-                        if (!item.homework) {
-                            item.homework = [];
-                        }
-                        item.homework.push(homeworkID);
-                    }
-                });
-            },
-            pushExamResults: function (results) {
-                var index,
-                    j;
-                
-                if (Array.isArray(results)) {
-                    for (index = 0; index < results.length; index += 1) {
-                        if (!validateID(results[index].StudentID) ||
-                            results[index].StudentID > this.students.length ||
-                            !validateNumber(results[index].score)) {
-                            throw Error;
-                        }
-                    }
-                    if (!chekForDuplicates(results)) {
-                        throw Error;
-                    }
-                } else {
-                    throw Error;
-                }
-                
-                for (index = 0; index < this.students.length; index += 1) {
-                    for (j = 0; j < results.length; j += 1) {
-                        if (this.students[index].id == results[j].StudentID) {
-                            this.students[index].score = results[j].score;
-                        }
-                    }
-                    if (!this.students[index].score) {
-                        this.students[index].score = 0;
-                    }
-                }
-            },
-            getTopStudents: function() {
             }
         };
         
         Object.defineProperties(Course, {
             'title': {
                 get: function () {
-                    return this._title;
+                    return _title;
                 },
                 set: function (value) {
                     if (!validateTitle(value)) {
                         throw Error;
                     }
-                    this._title = value;
+                    _title = value;
                 }
             },
             'presentations': {
                 get: function () {
-                    return this._presentations;
+                    return _presentations;
                 },
                 set: function (value) {
                     if (!validatePresentations(value)) {
                         throw Error;
                     }
-                    this._presentations = value;
+                    _presentations = value;
                 }
             },
+            'addStudent': {
+                value: function (name) {
+                    var names;
+                    
+                    if (validateString(name) && (names = name.split(' ')).length === 2 && 
+                        validateName(names[0]) && validateName(names[1])) {
+                        _students.push({
+                            firstname: names[0],
+                            lastname: names[1],
+                            id: _students.length + 1
+                        });
+                        
+                        return _students.length;
+                    } throw Error;
+                }
+            },
+            'getAllStudents': {
+                value: function () {
+                    return _students.slice(0);
+                }
+            },
+            'submitHomework': {
+                value: function (studentID, homeworkID) {
+                    if (!validateID(studentID) || !validateID(homeworkID) ||
+                        studentID > _students.length || homeworkID > _presentations.length) {
+                        throw Error;
+                    }
+                    _students.forEach(function (item) {
+                        if (item.id === studentID) {
+                            if (!item.homework) {
+                                item.homework = [];
+                            }
+                            item.homework.push(homeworkID);
+                        }
+                    });
+                }
+            },
+            'pushExamResults': {
+                value: function (results) {
+                    var index,
+                        j;
+                    
+                    if (Array.isArray(results)) {
+                        for (index = 0; index < results.length; index += 1) {
+                            if (!validateID(results[index].StudentID) ||
+                                results[index].StudentID > _students.length ||
+                                !validateNumber(results[index].score)) {
+                                throw Error;
+                            }
+                        }
+                        if (!chekForDuplicates(results)) {
+                            throw Error;
+                        }
+                    } else {
+                        throw Error;
+                    }
+                    
+                    for (index = 0; index < _students.length; index += 1) {
+                        for (j = 0; j < results.length; j += 1) {
+                            if (_students[index].id == results[j].StudentID) {
+                                _students[index].score = results[j].score;
+                            }
+                        }
+                        if (!_students[index].score) {
+                            _students[index].score = 0;
+                        }
+                    }
+                }
+            },
+            'getTopStudents': {
+                value: function () {
+                    
+                }
+            }
         });
         
         function validateTitle (title) {
