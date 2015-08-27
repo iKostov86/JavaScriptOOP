@@ -96,36 +96,106 @@ function solve() {
     }
 
     /* classes */
-    var player = {
-        init: function (name) {
-            this.name = name;
-            return this;
-        },
-        addPlaylist: function (playlistToAdd) {
+    var player = (function () {
+        var idCount = 0,
+            _playlists,
+            player = {
+            init: function (name) {
+                this.id = idCount += 1;
+                this.name = name;
+                _playlists = [];
+                return this;
+            },
+            addPlaylist: function (playlistToAdd) {
+                if (typeof (playlistToAdd) === 'undefined' || Object.getPrototypeOf(playlistToAdd) !== playlist) {
+                    throw Error;
+                }
 
-        },
-        getPlaylistById: function (id) {
+                _playlists.push(playlistToAdd);
 
-        },
-        removePlaylist: function (id, playlist) {
+                return this;
+            },
+            getPlaylistById: function (id) {
+                var playlistToFind = _playlists.find(function (item) {
+                    return item.id === id;
+                });
 
-        },
-        listPlaylists: function (page, size) {
+                return playlistToFind ? playlistToFind : null;
+            },
+            removePlaylist: function (value) {
+                var id,
+                    index;
 
-        },
-        contains: function (playable, playlist) {
+                if (typeof (value) === 'undefined') {
+                    throw Error;
+                }
 
-        },
-        search: function (pattern) {
+                if (typeof (value) !== 'number') {
+                    id = value.id;
+                } else {
+                    id = value;
+                }
 
-        }
-    };
+                index = _playlists.findIndex(function (item) {
+                    return item.id === id;
+                });
+
+                if (index < 0) {
+                    throw Error;
+                }
+
+                _playlists.splice(index, 1);
+
+                return this;
+            },
+            listPlaylists: function (page, size) {
+                if (typeof (page) === 'undefined' ||
+                    typeof (size) === 'undefined' ||
+                    (page * size) > _playlists.length ||
+                    page < 0 ||
+                    size <= 0) {
+                    throw  Error;
+                }
+
+                _playlists.sort(function (item1, item2) {
+                    if (item1.name === item2.name) {
+                        return item1.id - item2.id;
+                    }
+                    //return item1.title.localeCompare(item2.title);
+                    return item1.name > item2.name;
+                });
+
+                return _playlists.slice(page * size, (page + 1) * size);
+            },
+            contains: function (playable, playlist) {
+
+            },
+            search: function (pattern) {
+
+            }
+        };
+
+        Object.defineProperties(player, {
+            'name': {
+                get: function () {
+                    return this._name;
+                },
+                set: function (value) {
+                    if (!isStringValid(value, 3, 25)) {
+                        throw Error;
+                    }
+                    this._name = value;
+                }
+            }
+        });
+
+        return player;
+    }());
 
     var playlist = (function () {
         var idCount = 0,
-            _playables;
-
-        var playlist = {
+            _playables,
+            playlist = {
             init: function (name) {
                 this.id = idCount += 1;
                 this.name = name;
@@ -150,12 +220,10 @@ function solve() {
                 var id,
                     index;
 
-                var typeOfValue = typeof (value);
-
-                if (typeOfValue === 'undefined') {
+                if (typeof (value) === 'undefined') {
                     throw Error;
                 }
-                if (typeOfValue !== 'number') {
+                if (typeof (value) !== 'number') {
                     id = value.id;
                 } else {
                     id = value;
@@ -174,8 +242,8 @@ function solve() {
                 return this;
             },
             listPlayables: function (page, size) {
-                if (typeof (page) === undefined ||
-                    typeof (size) === undefined ||
+                if (typeof (page) === 'undefined' ||
+                    typeof (size) === 'undefined' ||
                     (page * size) > _playables.length ||
                     page < 0 ||
                     size <= 0) {
@@ -192,7 +260,7 @@ function solve() {
 
                 return _playables.slice(page * size, (page + 1) * size);
             }
-        }
+        };
 
         Object.defineProperties(playlist, {
             'name': {
@@ -206,7 +274,7 @@ function solve() {
                     this._name = value;
                 }
             }
-        })
+        });
 
         return playlist;
     }());
@@ -314,36 +382,6 @@ function solve() {
         return video;
     }(playable));
 
-    //var video = (function (parent) {
-    //    var video = Object.create(parent, {
-    //        'init': {
-    //            value: function (title, author, imdbRating) {
-    //                parent.init.call(this, title, author);
-    //                this.imdbRating = imdbRating;
-    //                return this;
-    //            }
-    //        },
-    //        'play': {
-    //            value: function () {
-    //                return parent.play.call(this) + ' - [' + this.imdbRating + ']';
-    //            }
-    //        },
-    //        'imdbRating': {
-    //            get: function () {
-    //                return this._imdbRating;
-    //            },
-    //            set: function (value) {
-    //                if (typeof (value) !== 'number' || value < 1 || value > 5) {
-    //                    throw Error;
-    //                }
-    //                this._imdbRating = value;
-    //            }
-    //        }
-    //    });
-    //
-    //    return video;
-    //}(playable));
-
     /* module */
     var module = {
         getPlayer: function (name) {
@@ -366,20 +404,5 @@ function solve() {
 
     return module;
 }
-//
-//var result = solve();
-//
-//var myPlaylist = result.getPlaylist('Rock and Roll');
-//myPlaylist.addPlayable(result.getAudio('Basi Rocka1', 'Pesho', 5));
-//myPlaylist.addPlayable(result.getAudio('Basi Rocka2', 'Pesho', 5));
-//myPlaylist.addPlayable(result.getAudio('Basi Rocka3', 'Pesho', 5));
-//myPlaylist.addPlayable(result.getAudio('Basi Rocka4', 'Pesho', 5));
-//myPlaylist.addPlayable(result.getAudio('Basi Rocka5', 'Pesho', 5));
-//myPlaylist.addPlayable(result.getAudio('Basi Rocka6', 'Pesho', 5));
-//myPlaylist.addPlayable(result.getAudio('Basi Rocka7', 'Pesho', 5));
-//myPlaylist.addPlayable(result.getAudio('Basi Rocka8', 'Pesho', 5));
-//myPlaylist.addPlayable(result.getAudio('Basi Rocka9', 'Pesho', 5));
-//
-//console.log(myPlaylist.listPlayables(2, 4));
 
 module.exports = solve;
