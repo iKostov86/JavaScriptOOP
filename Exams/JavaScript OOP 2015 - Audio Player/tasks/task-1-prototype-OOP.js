@@ -191,16 +191,98 @@ function solve() {
     };
 
     /* classes */
-    var Player = (function () {
-        var idCount = 0;
+    var player = (function () {
+        var idCount = 0,
+            player = {
+            init: function (name) {
+                this.id = idCount += 1;
+                this.name = name;
+                this._playlists = [];
 
-        function Player (name) {
-            this.id = idCount += 1;
-            this.name = name;
-            this._playlists = [];
-        }
+                return this;
+            },
+            addPlaylist: function (playlistToAdd) {
+                validator.validateObject(playlistToAdd, 'Playlist to add');
 
-        Object.defineProperties(Player.prototype, {
+                this._playlists.push(playlistToAdd);
+
+                return this;
+            },
+            getPlaylistById: function (id) {
+                var playlistToFind = this._playlists.find(function (item) {
+                    return item.id === id;
+                });
+
+                return playlistToFind ? playlistToFind : null;
+            },
+            removePlaylist: function (value) {
+                var id,
+                    index;
+
+                validator.validateIfUndefined(value);
+
+                if (validator.isType(value, 'number')) {
+                    id = value;
+                } else {
+                    id = value.id;
+                }
+
+                index = this._playlists.findIndex(function (item) {
+                    return item.id === id;
+                });
+
+                validator.validateIfNegative(index, 'Index');
+
+                this._playlists.splice(index, 1);
+
+                return this;
+            },
+            listPlaylists: function (page, size) {
+                validator.validatePaging(page, size, this._playlists.length,
+                    'Page * size', '_playlists.length');
+
+                return this._playlists
+                    .slice()
+                    .sort(sortFunction('name', 'id'))
+                    .splice(page * size, size);
+            },
+            contains: function (playable, playlist) {
+                validator.validateObject(playable);
+                validator.validateObject(playlist);
+
+                var searchPlaylist = this.getPlaylistById(playlist.id);
+                var searchPlayable = this.getPlayableById(playable.id);
+
+                if (searchPlaylist === null || searchPlayable === null) {
+                    return false;
+                } return true;
+            },
+            search: function (pattern) {
+                validator.validateString(pattern, 'Pattern');
+
+                pattern = pattern.toLowerCase();
+
+                return this._playlists
+                    .filter(function (playlistItem) {
+                        return playlistItem
+                            .getAllPlayables()
+                            .some(function (playableItem) {
+                                return playableItem
+                                    .title
+                                    .toLowerCase()
+                                    .indexOf(pattern) >= 0;
+                        });
+                    })
+                    .map(function (filteredItem) {
+                        return {
+                            id: filteredItem.id,
+                            name: filteredItem.name,
+                        };
+                    });
+            }
+        };
+
+        Object.defineProperties(player, {
             'name': {
                 get: function () {
                     return this._name;
@@ -210,113 +292,74 @@ function solve() {
 
                     this._name = value;
                 }
-            },
-            'addPlaylist': {
-                value: function (playlistToAdd) {
-                    validator.validateObject(playlistToAdd, 'Playlist to add');
-
-                    this._playlists.push(playlistToAdd);
-
-                    return this;
-                }
-            },
-            'getPlaylistById': {
-                value: function (id) {
-                    var playlistToFind = this._playlists.find(function (item) {
-                        return item.id === id;
-                    });
-
-                    return playlistToFind ? playlistToFind : null;
-                }
-            },
-            'removePlaylist': {
-                value: function (value) {
-                    var id,
-                        index;
-
-                    validator.validateIfUndefined(value);
-
-                    if (validator.isType(value, 'number')) {
-                        id = value;
-                    } else {
-                        id = value.id;
-                    }
-
-                    index = this._playlists.findIndex(function (item) {
-                        return item.id === id;
-                    });
-
-                    validator.validateIfNegative(index, 'Index');
-
-                    this._playlists.splice(index, 1);
-
-                    return this;
-                }
-            },
-            'listPlaylists': {
-                value: function (page, size) {
-                    validator.validatePaging(page, size, this._playlists.length,
-                        'Page * size', '_playlists.length');
-
-                    return this._playlists
-                        .slice()
-                        .sort(sortFunction('name', 'id'))
-                        .splice(page * size, size);
-                }
-            },
-            'contains': {
-                value: function (playable, playlist) {
-                    validator.validateObject(playable);
-                    validator.validateObject(playlist);
-
-                    var searchPlaylist = this.getPlaylistById(playlist.id);
-                    var searchPlayable = this.getPlayableById(playable.id);
-
-                    if (searchPlaylist === null || searchPlayable === null) {
-                        return false;
-                    } return true;
-                }
-            },
-            'search': {
-                value: function (pattern) {
-                    validator.validateString(pattern, 'Pattern');
-
-                    pattern = pattern.toLowerCase();
-
-                    return this._playlists
-                        .filter(function (playlistItem) {
-                            return playlistItem
-                                .getAllPlayables()
-                                .some(function (playableItem) {
-                                    return playableItem
-                                        .title
-                                        .toLowerCase()
-                                        .indexOf(pattern) >= 0;
-                                });
-                        })
-                        .map(function (filteredItem) {
-                            return {
-                                id: filteredItem.id,
-                                name: filteredItem.name,
-                            };
-                        });
-                }
             }
         });
 
-        return Player;
+        return player;
     }());
 
-    var Playlist = (function () {
+    var playlist = (function () {
         var idCount = 0;
 
-        function Playlist (name) {
-            this.id = idCount += 1;
-            this.name = name;
-            this._playables = [];
-        }
+        var playlist = {
+            init: function (name) {
+                this.id = idCount += 1;
+                this.name = name;
+                this._playables = [];
 
-        Object.defineProperties(Playlist.prototype, {
+                return this;
+            },
+            addPlayable: function (playable) {
+                validator.validateObject(playable, 'Playable');
+
+                this._playables.push(playable);
+
+                return this;
+            },
+            getPlayableById: function (id) {
+                var playableToFind = this._playables.find(function (item) {
+                    return item.id === id;
+                });
+
+                return playableToFind ? playableToFind : null;
+            },
+            removePlayable: function (value) {
+                var id,
+                    index;
+
+                validator.validateIfUndefined(value);
+
+                if (validator.isType(value, 'number')) {
+                    id = value;
+                } else {
+                    id = value.id;
+                }
+
+                index = this._playables.findIndex(function (item) {
+                    return item.id === id;
+                });
+
+                validator.validateIfNegative(index, 'Index');
+
+                this._playables.splice(index, 1);
+
+                return this;
+            },
+            getAllPlayables: function () {
+                return this._playables.slice();
+            },
+            listPlayables: function (page, size) {
+                validator.validatePaging(page, size, this._playables.length,
+                    'Page * size', '_playables.length');
+
+                return this._playables
+                    .slice()
+                    .sort(sortFunction('title', 'id'))
+                    .splice(page * size, size);
+            }
+        };
+
+        Object.defineProperties(playlist, {
             'name': {
                 get: function () {
                     return this._name;
@@ -326,80 +369,29 @@ function solve() {
 
                     this._name = value;
                 }
-            },
-            'addPlayable': {
-                value: function (playable) {
-                    validator.validateObject(playable, 'Playable');
-
-                    this._playables.push(playable);
-
-                    return this;
-                }
-            },
-            'getPlayableById': {
-                value: function (id) {
-                    var playableToFind = this._playables.find(function (item) {
-                        return item.id === id;
-                    });
-
-                    return playableToFind ? playableToFind : null;
-                }
-            },
-            'removePlayable': {
-                value: function (value) {
-                    var id,
-                        index;
-
-                    validator.validateIfUndefined(value);
-
-                    if (validator.isType(value, 'number')) {
-                        id = value;
-                    } else {
-                        id = value.id;
-                    }
-
-                    index = this._playables.findIndex(function (item) {
-                        return item.id === id;
-                    });
-
-                    validator.validateIfNegative(index, 'Index');
-
-                    this._playables.splice(index, 1);
-
-                    return this;
-                }
-            },
-            'listPlayables': {
-                value: function (page, size) {
-                    validator.validatePaging(page, size, this._playables.length,
-                        'Page * size', '_playables.length');
-
-                    return this._playables
-                        .slice()
-                        .sort(sortFunction('title', 'id'))
-                        .splice(page * size, size);
-                }
-            },
-            'getAllPlayables': {
-                value: function () {
-                    return this._playables.slice();
-                }
             }
         });
 
-        return Playlist;
+        return playlist;
     }());
 
-    var Playable = (function () {
+    var playable = (function () {
         var idCount = 0;
 
-        function Playable (title, author) {
-            this.id = idCount += 1;
-            this.title = title;
-            this.author = author;
-        }
+        var playable = {
+            init: function (title, author) {
+                this.id = idCount += 1;
+                this.title = title;
+                this.author = author;
 
-        Object.defineProperties(Playable.prototype, {
+                return this;
+            },
+            play: function () {
+                return this.id + '. ' + this.title + ' - ' + this.author;
+            }
+        };
+
+        Object.defineProperties(playable, {
             'title': {
                 get: function () {
                     return this._title;
@@ -419,27 +411,27 @@ function solve() {
 
                     this._author = value;
                 }
-            },
-            'play': {
-                value: function () {
-                    return this.id + '. ' + this.title + ' - ' + this.author;
-                }
             }
         });
 
-        return Playable;
+        return playable;
     }());
 
-    var Audio = (function (parent) {
-        function Audio (title, author, length) {
-            parent.call(this, title, author);
-            this.length = length;
-        }
+    var audio = (function (parent) {
+        var audio = Object.create(parent, {
+            'init': {
+                value: function (title, author, length) {
+                    parent.init.call(this, title, author);
+                    this.length = length;
 
-        Audio.prototype = Object.create(parent.prototype);
-        //Audio.prototype.constructor = Audio;
-
-        Object.defineProperties(Audio.prototype, {
+                    return this;
+                }
+            },
+            'play': {
+                value: function () {
+                    return parent.play.call(this) + ' - ' + this.length;
+                }
+            },
             'length': {
                 get: function () {
                     return this._length;
@@ -451,28 +443,28 @@ function solve() {
 
                     this._length = value;
                 }
-            },
-            'play': {
-                value: function () {
-                    return parent.play.call(this) + ' - ' + this.length;
-                }
             }
         });
 
-        return Audio;
-    }(Playable));
+        return audio;
+    }(playable));
 
 
-    var Video = (function (parent) {
-        function Video (title, author, imdbRating) {
-            parent.call(this, title, author);
-            this.imdbRating = imdbRating;
-        }
+    var video = (function (parent) {
+        var video = Object.create(parent, {
+            'init': {
+                value: function (title, author, imdbRating) {
+                    parent.init.call(this, title, author);
+                    this.imdbRating = imdbRating;
 
-        Video.prototype = Object.create(parent.prototype);
-        //Video.prototype.constructor  = Video;
-
-        Object.defineProperties(Video.prototype, {
+                    return this;
+                }
+            },
+            'play': {
+                value: function () {
+                    return parent.play.call(this) + ' - ' + this.imdbRating;
+                }
+            },
             'imdbRating': {
                 get: function () {
                     return this._imdbRating;
@@ -482,30 +474,29 @@ function solve() {
 
                     this._imdbRating = value;
                 }
-            },
-            'play': {
-                value: function () {
-                    return parent.play.call(this) + ' - ' + this.imdbRating;
-                }
             }
         });
 
-        return Video;
-    }(Playable));
+        return video;
+    }(playable));
 
     /* module */
     var module = {
         getPlayer: function (name) {
-            return new Player(name);
+            return Object.create(player)
+                .init(name);
         },
         getPlaylist: function (name) {
-            return new Playlist(name);
+            return Object.create(playlist)
+                .init(name);
         },
         getAudio: function (title, author, length) {
-            return new Audio(title, author, length);
+            return Object.create(audio)
+                .init(title, author, length);
         },
         getVideo: function (title, author, imdbRating) {
-            return new Video(title, author, imdbRating);
+            return Object.create(video)
+                .init(title, author, imdbRating);
         }
     };
 
