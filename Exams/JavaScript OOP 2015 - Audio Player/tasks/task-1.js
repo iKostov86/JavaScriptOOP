@@ -89,219 +89,324 @@ function solve() {
         })();
     }
 
-    function isStringValid (str, minLength, maxLength) {
-        if (typeof str !== 'string' || str.length < minLength || str.length > maxLength) {
-            return false;
-        } return true;
+    function sortFunction (firstParameter, secondParameter) {
+        return function (item1, item2) {
+            if (item1[firstParameter] === item2[firstParameter]) {
+                return item1[secondParameter] - item2[secondParameter];
+            }
+            //return item1.title.localeCompare(item2.title);
+            return item1[firstParameter] > item2[firstParameter];
+        }
     }
 
+    var CONSTANTS = {
+        TEXT_MIN_LENGTH: 3,
+        TEXT_MAX_LENGTH: 25,
+        IMDB_MIN_RATING: 1,
+        IMDB_MAX_RATING: 5,
+    }
+
+    var validator = {
+        validateIfUndefined: function (value, valueAsString) {
+          if (typeof value === 'undefined') {
+              throw new Error(valueAsString + ' can\'t be undefined!');
+          }
+        },
+        validateIfNegative: function (value, valueAsString) {
+            if (value < 0) {
+                throw new Error(valueAsString + ' can\'t be negative!');
+            }
+        },
+        validateIfZero: function (value, valueAsString) {
+            if (value === 0) {
+                throw new Error(valueAsString + ' can\'t be 0!');
+            }
+        },
+        validateNumber: function (value, valueAsString) {
+            validator.validateIfUndefined(value);
+
+            if (!validator.isType(value, 'number')) {
+                throw new Error(valueAsString
+                    + 'must be a number!');
+            }
+        },
+        validateString: function (value, valueAsString) {
+            validator.validateIfUndefined(value);
+
+            if (!validator.isType(value, 'string')) {
+                throw new Error(valueAsString
+                    + 'must be a string!');
+            }
+        },
+        validateObject: function (value, valueAsString) {
+            validator.validateIfUndefined(value);
+
+            if (!validator.isType(value, 'object')) {
+                throw new Error(valueAsString
+                    + ' must be a object!');
+            }
+        },
+        validateImdbRating: function (imdbRating, imdbRatingAsStr) {
+            validator.validateNumber(imdbRating, imdbRatingAsStr);
+
+            if (imdbRating < CONSTANTS.IMDB_MIN_RATING ||
+                imdbRating > CONSTANTS.IMDB_MAX_RATING) {
+                throw new Error(imdbRatingAsStr
+                    + ' must be a number between '
+                    + CONSTANTS.IMDB_MIN_RATING
+                    + ' and ' +
+                    CONSTANTS.IMDB_MAX_RATING
+                    + '!');
+            }
+        },
+        validateText: function (value, valueAsString) {
+            validator.validateString(value, valueAsString);
+
+            if (value.length < CONSTANTS.TEXT_MIN_LENGTH ||
+                value.length > CONSTANTS.TEXT_MAX_LENGTH) {
+                throw new Error(valueAsString
+                    + ' must be string between '
+                    + CONSTANTS.TEXT_MIN_LENGTH
+                    + ' and '
+                    + CONSTANTS.TEXT_MAX_LENGTH
+                    + ' symbols');
+            }
+        },
+        validatePaging: function (page, size, maxLength, givenLenghtAsStr, maxLengthAsStr) {
+            validator.validateNumber(page, 'Page');
+            validator.validateNumber(size, 'Size');
+            validator.validateIfNegative(page, 'Page');
+            validator.validateIfNegative(size, 'Size');
+            validator.validateIfZero(size, 'Size');
+
+            if ((page * size) > maxLength) {
+                throw new Error(givenLenghtAsStr
+                    + ' can\'t be more than '
+                    + maxLengthAsStr + '!');
+            }
+        },
+        isType: function (value, mustBe) {
+            return typeof value === mustBe;
+        },
+    };
+
     /* classes */
-    var player = (function () {
-        var idCount = 0,
-            _playlists,
-            player = {
-            init: function (name) {
-                this.id = idCount += 1;
-                this.name = name;
-                _playlists = [];
-                return this;
-            },
-            addPlaylist: function (playlistToAdd) {
-                if (typeof (playlistToAdd) === 'undefined' || Object.getPrototypeOf(playlistToAdd) !== playlist) {
-                    throw Error;
-                }
+    var Player = (function () {
+        var idCount = 0;
 
-                _playlists.push(playlistToAdd);
+        function Player (name) {
+            this.id = idCount += 1;
+            this.name = name;
+            this._playlists = [];
+        }
 
-                return this;
-            },
-            getPlaylistById: function (id) {
-                var playlistToFind = _playlists.find(function (item) {
-                    return item.id === id;
-                });
-
-                return playlistToFind ? playlistToFind : null;
-            },
-            removePlaylist: function (value) {
-                var id,
-                    index;
-
-                if (typeof (value) === 'undefined') {
-                    throw Error;
-                }
-
-                if (typeof (value) !== 'number') {
-                    id = value.id;
-                } else {
-                    id = value;
-                }
-
-                index = _playlists.findIndex(function (item) {
-                    return item.id === id;
-                });
-
-                if (index < 0) {
-                    throw Error;
-                }
-
-                _playlists.splice(index, 1);
-
-                return this;
-            },
-            listPlaylists: function (page, size) {
-                if (typeof (page) === 'undefined' ||
-                    typeof (size) === 'undefined' ||
-                    (page * size) > _playlists.length ||
-                    page < 0 ||
-                    size <= 0) {
-                    throw  Error;
-                }
-
-                _playlists.sort(function (item1, item2) {
-                    if (item1.name === item2.name) {
-                        return item1.id - item2.id;
-                    }
-                    //return item1.title.localeCompare(item2.title);
-                    return item1.name > item2.name;
-                });
-
-                return _playlists.slice(page * size, (page + 1) * size);
-            },
-            contains: function (playable, playlist) {
-
-            },
-            search: function (pattern) {
-
-            }
-        };
-
-        Object.defineProperties(player, {
+        Object.defineProperties(Player.prototype, {
             'name': {
                 get: function () {
                     return this._name;
                 },
                 set: function (value) {
-                    if (!isStringValid(value, 3, 25)) {
-                        throw Error;
-                    }
+                    validator.validateText(value, 'Player name');
+
                     this._name = value;
+                }
+            },
+            'addPlaylist': {
+                value: function (playlistToAdd) {
+                    validator.validateObject(playlistToAdd, 'Playlist to add');
+
+                    this._playlists.push(playlistToAdd);
+
+                    return this;
+                }
+            },
+            'getPlaylistById': {
+                value: function (id) {
+                    var playlistToFind = this._playlists.find(function (item) {
+                        return item.id === id;
+                    });
+
+                    return playlistToFind ? playlistToFind : null;
+                }
+            },
+            'removePlaylist': {
+                value: function (value) {
+                    var id,
+                        index;
+
+                    validator.validateIfUndefined(value);
+
+                    if (validator.isType(value, 'number')) {
+                        id = value;
+                    } else {
+                        id = value.id;
+                    }
+
+                    index = this._playlists.findIndex(function (item) {
+                        return item.id === id;
+                    });
+
+                    validator.validateIfNegative(index, 'Index');
+
+                    this._playlists.splice(index, 1);
+
+                    return this;
+                }
+            },
+            'listPlaylists': {
+                value: function (page, size) {
+                    validator.validatePaging(page, size, this._playlists.length,
+                        'Page * size', '_playlists.length');
+
+                    return this._playlists
+                        .slice()
+                        .sort(sortFunction('name', 'id'))
+                        .splice(page * size, size);
+                }
+            },
+            'contains': {
+                value: function (playable, playlist) {
+                    validator.validateObject(playable);
+                    validator.validateObject(playlist);
+
+                    var searchPlaylist = this.getPlaylistById(playlist.id);
+                    var searchPlayable = this.getPlayableById(playable.id);
+
+                    if (searchPlaylist === null || searchPlayable === null) {
+                        return false;
+                    } return true;
+                }
+            },
+            'search': {
+                value: function (pattern) {
+                    validator.validateString(pattern, 'Pattern');
+
+                    pattern = pattern.toLowerCase();
+
+                    return this._playlists
+                        .filter(function (playlistItem) {
+                            return playlistItem
+                                .getAllPlayables()
+                                .some(function (playableItem) {
+                                    return playableItem
+                                        .title
+                                        .toLowerCase()
+                                        .indexOf(pattern) >= 0;
+                                });
+                        })
+                        .map(function (filteredItem) {
+                            return {
+                                id: filteredItem.id,
+                                name: filteredItem.name,
+                            };
+                        });
                 }
             }
         });
 
-        return player;
+        return Player;
     }());
 
-    var playlist = (function () {
-        var idCount = 0,
-            _playables,
-            playlist = {
-            init: function (name) {
-                this.id = idCount += 1;
-                this.name = name;
-                _playables = [];
-                return this;
-            },
-            addPlayable: function (playable) {
-                if (typeof (playable) === 'undefined') {
-                    throw Error;
-                }
-                _playables.push(playable);
-                return this;
-            },
-            getPlayableById: function (id) {
-                var playableToFind = _playables.find(function (item) {
-                    return item.id === id;
-                });
+    var Playlist = (function () {
+        var idCount = 0;
 
-                return playableToFind ? playableToFind : null;
-            },
-            removePlayable: function (value) {
-                var id,
-                    index;
+        function Playlist (name) {
+            this.id = idCount += 1;
+            this.name = name;
+            this._playables = [];
+        }
 
-                if (typeof (value) === 'undefined') {
-                    throw Error;
-                }
-                if (typeof (value) !== 'number') {
-                    id = value.id;
-                } else {
-                    id = value;
-                }
-
-                index = _playables.findIndex(function (item) {
-                    return item.id === id;
-                });
-
-                if (index < 0) {
-                    throw Error;
-                }
-
-                _playables.splice(index, 1);
-
-                return this;
-            },
-            listPlayables: function (page, size) {
-                if (typeof (page) === 'undefined' ||
-                    typeof (size) === 'undefined' ||
-                    (page * size) > _playables.length ||
-                    page < 0 ||
-                    size <= 0) {
-                    throw  Error;
-                }
-
-                _playables.sort(function (item1, item2) {
-                    if (item1.title === item2.title) {
-                        return item1.id - item2.id;
-                    }
-                    //return item1.title.localeCompare(item2.title);
-                    return item1.title > item2.title;
-                });
-
-                return _playables.slice(page * size, (page + 1) * size);
-            }
-        };
-
-        Object.defineProperties(playlist, {
+        Object.defineProperties(Playlist.prototype, {
             'name': {
                 get: function () {
                     return this._name;
                 },
                 set: function (value) {
-                    if (!isStringValid(value, 3, 25)) {
-                        throw Error;
-                    }
+                    validator.validateText(value, 'Playlist name');
+
                     this._name = value;
+                }
+            },
+            'addPlayable': {
+                value: function (playable) {
+                    validator.validateObject(playable, 'Playable');
+
+                    this._playables.push(playable);
+
+                    return this;
+                }
+            },
+            'getPlayableById': {
+                value: function (id) {
+                    var playableToFind = this._playables.find(function (item) {
+                        return item.id === id;
+                    });
+
+                    return playableToFind ? playableToFind : null;
+                }
+            },
+            'removePlayable': {
+                value: function (value) {
+                    var id,
+                        index;
+
+                    validator.validateIfUndefined(value);
+
+                    if (validator.isType(value, 'number')) {
+                        id = value;
+                    } else {
+                        id = value.id;
+                    }
+
+                    index = this._playables.findIndex(function (item) {
+                        return item.id === id;
+                    });
+
+                    validator.validateIfNegative(index, 'Index');
+
+                    this._playables.splice(index, 1);
+
+                    return this;
+                }
+            },
+            'listPlayables': {
+                value: function (page, size) {
+                    validator.validatePaging(page, size, this._playables.length,
+                        'Page * size', '_playables.length');
+
+                    return this._playables
+                        .slice()
+                        .sort(sortFunction('title', 'id'))
+                        .splice(page * size, size);
+                }
+            },
+            'getAllPlayables': {
+                value: function () {
+                    return this._playables.slice();
                 }
             }
         });
 
-        return playlist;
+        return Playlist;
     }());
 
-    var playable = (function () {
-        var idCount = 0,
-            playable = {
-            init: function (title, author) {
-                this.id = idCount += 1;
-                this.title = title;
-                this.author = author;
-                return this;
-            },
-            play: function () {
-                return '[' + this.id + ']. [' + this.title + '] - [' + this.author + ']';
-            }
-        };
+    var Playable = (function () {
+        var idCount = 0;
 
-        Object.defineProperties(playable, {
+        function Playable (title, author) {
+            this.id = idCount += 1;
+            this.title = title;
+            this.author = author;
+        }
+
+        Object.defineProperties(Playable.prototype, {
             'title': {
                 get: function () {
                     return this._title;
                 },
                 set: function (value) {
-                    if (!isStringValid(value, 3, 25)) {
-                        throw  Error;
-                    }
+                    validator.validateText(value, 'Playable title');
+
                     this._title = value;
                 }
             },
@@ -310,99 +415,128 @@ function solve() {
                     return this._author;
                 },
                 set: function (value) {
-                    if (!isStringValid(value, 3, 25)) {
-                        throw  Error;
-                    }
+                    validator.validateText(value, 'Playable author');
+
                     this._author = value;
-                }
-            }
-        });
-
-        return playable;
-    }());
-
-    var audio = (function (parent) {
-        var audio = Object.create(parent, {
-            'init': {
-                value: function (title, author, length) {
-                    parent.init.call(this, title, author);
-                    this.length = length;
-                    return this;
                 }
             },
             'play': {
                 value: function () {
-                    return parent.play.call(this) + ' - [' + this.length + ']';
+                    return this.id + '. ' + this.title + ' - ' + this.author;
                 }
-            },
+            }
+        });
+
+        return Playable;
+    }());
+
+    var Audio = (function (parent) {
+        function Audio (title, author, length) {
+            parent.call(this, title, author);
+            this.length = length;
+        }
+
+        Audio.prototype = Object.create(parent.prototype);
+        //Audio.prototype.constructor = Audio;
+
+        Object.defineProperties(Audio.prototype, {
             'length': {
                 get: function () {
                     return this._length;
                 },
                 set: function (value) {
-                    if (value < 1) {
-                        throw  Error;
-                    }
+                    validator.validateNumber(value, 'Audio length');
+                    validator.validateIfNegative(value, 'Audio length');
+                    validator.validateIfZero(value, 'Audio length');
+
                     this._length = value;
-                }
-            }
-        });
-
-        return audio;
-    }(playable));
-
-
-    var video = (function (parent) {
-        var video = Object.create(parent, {
-            'init': {
-                value: function (title, author, imdbRating) {
-                    parent.init.call(this, title, author);
-                    this.imdbRating = imdbRating;
-                    return this;
                 }
             },
             'play': {
                 value: function () {
-                    return parent.play.call(this) + ' - [' + this.imdbRating + ']';
+                    return parent.play.call(this) + ' - ' + this.length;
                 }
-            },
+            }
+        });
+
+        return Audio;
+    }(Playable));
+
+
+    var Video = (function (parent) {
+        function Video (title, author, imdbRating) {
+            parent.call(this, title, author);
+            this.imdbRating = imdbRating;
+        }
+
+        Video.prototype = Object.create(parent.prototype);
+        //Video.prototype.constructor  = Video;
+
+        Object.defineProperties(Video.prototype, {
             'imdbRating': {
                 get: function () {
                     return this._imdbRating;
                 },
                 set: function (value) {
-                    if (typeof (value) !== 'number' || value < 1 || value > 5) {
-                        throw Error;
-                    }
+                    validator.validateImdbRating(value, 'ImdbRating');
+
                     this._imdbRating = value;
+                }
+            },
+            'play': {
+                value: function () {
+                    return parent.play.call(this) + ' - ' + this.imdbRating;
                 }
             }
         });
 
-        return video;
-    }(playable));
+        return Video;
+    }(Playable));
 
     /* module */
     var module = {
         getPlayer: function (name) {
-            return Object.create(player)
-                .init(name);
+            return new Player(name);
         },
         getPlaylist: function (name) {
-            return Object.create(playlist)
-                .init(name);
+            return new Playlist(name);
         },
         getAudio: function (title, author, length) {
-            return Object.create(audio)
-                .init(title, author, length);
+            return new Audio(title, author, length);
         },
         getVideo: function (title, author, imdbRating) {
-            return Object.create(video)
-                .init(title, author, imdbRating);
+            return new Video(title, author, imdbRating);
         }
     };
 
     return module;
 }
+
+//var result = solve();
+//
+//var player = result.getPlayer('Batman\'s playlist')
+//    .addPlaylist(result.getPlaylist('Cool')
+//        .addPlayable(result.getAudio('They are green', 'Author', 5))
+//        .addPlayable(result.getAudio('I am Batman', 'Author', 5)))
+//    .addPlaylist(result.getPlaylist('Green')
+//        .addPlayable(result.getAudio('Green they are', 'Author', 5))
+//        .addPlayable(result.getAudio('Green is beautiful', 'Author', 5))
+//        .addPlayable(result.getAudio('To the green and beyond', 'Author', 5)));
+
+//console.log(player.search('green'));
+// returns:
+//  [{name: 'Cool', id: 1}, {name: 'Green', id: 2}]
+
+//console.log(player.search('batman'));
+// returns:
+//  [{name: 'Cool', id: 1}]
+
+//console.log(player.search('beyond'))
+// returns:
+//  [{name: Green, id: 2}]
+
+//console.log(player.search('John'));
+// returns:
+//  []
 
 module.exports = solve;
